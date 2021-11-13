@@ -14,8 +14,13 @@ import com.techyourchance.coroutines.R
 import com.techyourchance.coroutines.common.BaseFragment
 import com.techyourchance.coroutines.common.ThreadInfoLogger
 import com.techyourchance.coroutines.home.ScreenReachableFromHome
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class Exercise1Fragment : BaseFragment() {
+    val scope = CoroutineScope(Dispatchers.Main.immediate)
 
     override val screenTitle get() = ScreenReachableFromHome.EXERCISE_1.description
 
@@ -47,19 +52,22 @@ class Exercise1Fragment : BaseFragment() {
         btnGetReputation.setOnClickListener {
             logThreadInfo("button callback")
             btnGetReputation.isEnabled = false
-            getReputationForUser(edtUserId.text.toString())
-            btnGetReputation.isEnabled = true
+            scope.launch {
+                val rep = getReputationForUser(edtUserId.text.toString())
+                Toast.makeText(requireContext(), "reputation: $rep", Toast.LENGTH_SHORT).show()
+                btnGetReputation.isEnabled = true
+            }
         }
 
         return view
     }
 
-    private fun getReputationForUser(userId: String) {
-        logThreadInfo("getReputationForUser()")
+    suspend fun getReputationForUser(userId: String)  : Int{
+        return withContext(Dispatchers.IO) {
+            logThreadInfo("getReputationForUser()")
 
-        val reputation = getReputationEndpoint.getReputation(userId)
-
-        Toast.makeText(requireContext(), "reputation: $reputation", Toast.LENGTH_SHORT).show()
+            getReputationEndpoint.getReputation(userId)
+        }
     }
 
     private fun logThreadInfo(message: String) {

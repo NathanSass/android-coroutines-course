@@ -3,7 +3,9 @@ package com.techyourchance.coroutines.exercises.exercise2
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.view.*
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
@@ -15,6 +17,7 @@ import com.techyourchance.coroutines.exercises.exercise1.GetReputationEndpoint
 import com.techyourchance.coroutines.home.ScreenReachableFromHome
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -28,7 +31,7 @@ class Exercise2Fragment : BaseFragment() {
     private lateinit var btnGetReputation: Button
 
     private lateinit var getReputationEndpoint: GetReputationEndpoint
-
+    private var job: Job? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         getReputationEndpoint = compositionRoot.getReputationEndpoint
@@ -39,7 +42,7 @@ class Exercise2Fragment : BaseFragment() {
 
         edtUserId = view.findViewById(R.id.edt_user_id)
         edtUserId.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {            }
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 btnGetReputation.isEnabled = !s.isNullOrEmpty()
@@ -51,7 +54,7 @@ class Exercise2Fragment : BaseFragment() {
         btnGetReputation = view.findViewById(R.id.btn_get_reputation)
         btnGetReputation.setOnClickListener {
             logThreadInfo("button callback")
-            coroutineScope.launch {
+            job = coroutineScope.launch {
                 btnGetReputation.isEnabled = false
                 val reputation = getReputationForUser(edtUserId.text.toString())
                 Toast.makeText(requireContext(), "reputation: $reputation", Toast.LENGTH_SHORT).show()
@@ -60,6 +63,12 @@ class Exercise2Fragment : BaseFragment() {
         }
 
         return view
+    }
+
+    override fun onStop() {
+        super.onStop()
+        job?.cancel()
+        btnGetReputation.isEnabled = true
     }
 
     private suspend fun getReputationForUser(userId: String): Int {
